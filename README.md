@@ -10,5 +10,5 @@ Ou fonctionner par Elo : prendre une proportion plus importante de joueurs au el
 Ou fonctionner par classe d'Elo pour classer nos joueurs choisis aléatoirement (uniformes) dans des catégories
 
 
-# Tâche n°2 : ALler chercher les parties associées aux joueurs receuillis
+# Tâche n°2 : Aller chercher les parties associées aux joueurs receuillis
 Convertir et exporter ces données d'utilisateurs (potentiellement rangées par Elo) dans un dataframe qu'on stocke dans le projet "Data"
