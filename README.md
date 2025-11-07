@@ -1,7 +1,7 @@
 # Projet-info-2A
 
 
-# Tâche n°1 : Récupération d'identifiants d'utilisateurs 
+# Tâche n°1 : Récupération d'identifiants d'utilisateurs et des parties associées
 On crée un Masterfile qui : 
 1) Nettoie le dossier Data (où seront stockées un certain nombre de données extraites de l'API)
 2) Pour chaque type de parties, il va chercher une liste de N joueurs dont le nombre est spécifié par l'utilisateur
