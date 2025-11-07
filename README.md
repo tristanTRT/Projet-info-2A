@@ -8,7 +8,7 @@ On crée un Masterfile qui :
 3) Pour chaque joueur (dont l'id est stocké dans Data), il va chercher M parties (dont le nombre est spécifié par l'utilisateur
 4) Pour chaque type de parties, on écrit dans un fichier stocké dans Data un csv avec chaque ligne le résultat des parties extraites pour chaque joueur
 
-/ A faire : au lieu de juste stocker Win / Lose, il faudrait aussi stocker le time_stamp de la partie (pour pouvoir ensuite faire des études sur des streaks de parties rapprochées)
+/ A faire : au lieu de juste stocker Win / Lose, il faudrait aussi stocker le time_stamp de la partie (pour pouvoir ensuite faire des études sur des streaks de parties rapprochées) : utiliser un format de ce type : Username {partie ID : , Time Stamp : , Win/Lose}
 
 
 # Tâche n°2 : Etude des premières corrélations entre streak de parties gagnées
