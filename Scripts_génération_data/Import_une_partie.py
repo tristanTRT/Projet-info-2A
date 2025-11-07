@@ -5,7 +5,7 @@ import os
 import json
 import time
 
-def import_games(nb_parties_extraites=10, data_dir="/home/onyxia/work/Projet-info-2A/Data"):
+def import_games(nb_parties_extraites, data_dir="/home/onyxia/work/Projet-info-2A/Data"):
     """
     Extrait les parties Lichess pour tous les users présents dans les CSV
     et écrit un fichier CSV par type de partie.

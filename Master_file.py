@@ -4,22 +4,23 @@ Master script pour :
 """
 import random as rd
 
-from Scripts.Cleaner_data import run_clean_data
-from Scripts.Import_des_users import import_users
-from Scripts.Import_une_partie import import_games
+from Scripts_génération_data.Cleaner_data import run_clean_data
+from Scripts_génération_data.Import_des_users import import_users
+from Scripts_génération_data.Import_une_partie import import_games
 
 
 
 def main():
     print("=== Début du master script ===")
     nombre_sample = int(input("Quel est le nombre de joueurs à étudier ?"))
-    parsing = rd.randint(1,100)
+    parsing = int(input("Prendre un joueur tous les ..."))
+    nb_parties_extraites = int(input("Combien de parties extraire ?"))
     
     run_clean_data()
 
-    import_users(parsing*nombre_sample, parsing)
+    import_users(nombre_sample, parsing)
 
-    import_games(nb_parties_extraites=10)
+    import_games(nb_parties_extraites)
 
     print("=== Master script terminé ===")
 
