@@ -1,1 +1,0 @@
-# Installer zstandard pour la lecture des flux de parties 
