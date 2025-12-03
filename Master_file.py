@@ -34,7 +34,7 @@ def main():
     nombre_sample = int(input("Quel est le nombre de joueurs à étudier ? "))
     parsing = int(input("Prendre un joueur tous les ... "))
     nb_parties_extraites = int(input("Combien de parties extraire ? "))
-    clé = "lip_CPVkHhmuMoSsZ11CRhXj" #TOKEN Tristan API LICHESS
+    clé = "" # T
 
     # 1) Import des users
     dfs_users = import_users_df(nombre_sample, parsing, clé)
