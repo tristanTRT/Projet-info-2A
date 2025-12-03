@@ -36,13 +36,13 @@ def main():
     nombre_sample = int(input("Quel est le nombre de joueurs à étudier ? "))
     parsing = int(input("Prendre un joueur tous les ... "))
     nb_parties_extraites = int(input("Combien de parties extraire ? "))
-    clé = "lip_CPVkHhmuMoSsZ11CRhXj" # Token Lichess Tristan
+    token = "lip_FK5FgMyNLKal5syhcnCV" # Token Lichess Tristan
 
     # 1) Import des users
-    dfs_users = import_users_df(nombre_sample, parsing, clé)
+    dfs_users = import_users_df(nombre_sample, parsing, token)
 
     # 2) Import des parties
-    dfs_games = import_games_df(dfs_users, nb_parties_extraites, clé)
+    dfs_games = import_games_df(dfs_users, nb_parties_extraites, token)
 
     # 3) Sauvegarde sur disque dans Data/
     users_file = os.path.join(DATA_DIR, "dfs_users.pkl")
