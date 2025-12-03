@@ -56,13 +56,15 @@ eco_db = [
     {"eco": "E10", "name": "King's Indian Attack", "moves": ["Nf3", "d5", "g3"]},
 ]
 
-
-# Créer un DataFrame
+# Transformer la liste en DataFrame
 df_openings = pd.DataFrame(eco_db)
 
-# Choisir le chemin pour sauvegarder dans Projet-info-2A
-project_dir = os.path.dirname(os.path.abspath(__file__))  # chemin du script
-save_path = os.path.join(project_dir, "openings.pkl")
+# Répertoire Data du projet (même dossier que Master_file.py)
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "Data")
+os.makedirs(DATA_DIR, exist_ok=True)
+
+# Chemin complet pour sauvegarder
+save_path = os.path.join(DATA_DIR, "openings.pkl")
 
 # Sauvegarde en pickle
 df_openings.to_pickle(save_path)

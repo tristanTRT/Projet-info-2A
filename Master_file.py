@@ -10,7 +10,7 @@ import subprocess
 import os
 import pickle
 from Scripts_génération_data.Import_des_users import import_users_df
-from Scripts_génération_data.Import_une_partie import import_games_df
+
 
 # Répertoire pour stocker les données
 DATA_DIR = os.path.join(os.path.dirname(__file__), "Data")
@@ -29,6 +29,8 @@ def lancer_creation_openings():
     subprocess.run(["/opt/python/bin/python", script_path], check=True)
 
 def main():
+    lancer_creation_openings()
+    from Scripts_génération_data.Import_une_partie import import_games_df
     print("=== Début du master script ===")
     nettoyer_data(DATA_DIR)
     nombre_sample = int(input("Quel est le nombre de joueurs à étudier ? "))
