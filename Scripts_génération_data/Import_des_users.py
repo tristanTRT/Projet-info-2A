@@ -21,7 +21,7 @@ def extraction_users_leaderboard(nombre_sample, format_partie, parsing, token, m
         if r.status_code == 200:
             break
         elif r.status_code == 429:
-            wait_time = int(r.headers.get("Retry-After", 5))
+            wait_time = int(r.headers.get("Retry-After", 3))
             print(f"429 reçu pour leaderboard {format_partie}. Attente {wait_time}s ({retries+1}/{max_retries})")
             time.sleep(wait_time)
             retries += 1

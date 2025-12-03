@@ -11,7 +11,7 @@ import os
 DATA_DIR = os.path.join(os.path.dirname(__file__), "../Data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# 🔹 Charger le DataFrame des ouvertures depuis openings.pkl dans Data/
+# Charger le DataFrame des ouvertures depuis openings.pkl dans Data/
 openings_file = os.path.join(DATA_DIR, "openings.pkl")
 with open(openings_file, "rb") as f:
     df_openings = pickle.load(f)

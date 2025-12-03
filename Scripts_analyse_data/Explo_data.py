@@ -9,11 +9,11 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_dir = os.path.join(current_dir, "../Scripts-génération-data")  # remonte d'un niveau
 data_dir = os.path.join(current_dir, "../Data")  # remonte d'un niveau pour Data
 
-# 1️⃣ Ajouter Scripts-génération-data au path si besoin
+# Ajouter Scripts-génération-data au path si besoin
 if scripts_dir not in sys.path:
     sys.path.append(scripts_dir)
 
-# 2️⃣ Charger les DataFrames sauvegardés depuis Data/
+# Charger les DataFrames sauvegardés depuis Data/
 dfs_users_file = os.path.join(data_dir, "dfs_users.pkl")
 dfs_games_file = os.path.join(data_dir, "dfs_games.pkl")
 
@@ -23,7 +23,7 @@ with open(dfs_users_file, "rb") as f:
 with open(dfs_games_file, "rb") as f:
     dfs_games = pickle.load(f)
 
-# 3️⃣ Fonction pratique pour explorer les parties d'un joueur
+# Fonction pratique pour explorer les parties d'un joueur
 def show_player_games(username, dfs_games, max_rows=5):
     for format_partie, players_dict in dfs_games.items():
         if username in players_dict:
@@ -36,9 +36,10 @@ def show_player_games(username, dfs_games, max_rows=5):
 # Exemple d'utilisation
 # show_player_games("elconceto", dfs_games)
 
-# 🔹 Exemple affichage classique
+# Exemple affichage classique
 print(dfs_users["classical"])
 print('Users classical format\n')
 
-print(dfs_games["classical"]["yuuki-asuna"])
+
+#print(dfs_games["classical"]["yuuki-asuna"])
 print('Parties de yuuki-asuna, user classical')
