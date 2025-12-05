@@ -33,13 +33,11 @@ def show_player_games(username, dfs_games, max_rows=5):
         else:
             print(f"\nFormat : {format_partie} | Joueur : {username} : pas de données")
 
+
+
 # Exemple d'utilisation
 # show_player_games("elconceto", dfs_games)
 
 # Exemple affichage classique
-
-
-
-
 print(dfs_games["classical"]["chesstheory64"])
 print('Parties de yuuki-asuna, user classical')

@@ -38,7 +38,7 @@ def main():
     nombre_sample = int(input("Quel est le nombre de joueurs à étudier ? "))
     parsing = int(input("Prendre un joueur tous les ... "))
     nb_parties_extraites = int(input("Combien de parties extraire ? "))
-    token = os.environ["jeton_api"] # Token Lichess Tristan
+    token = os.environ["jeton_api"] # Token Lichess
 
     # 1) Import des users
     dfs_users = import_users_df(nombre_sample, parsing, token)

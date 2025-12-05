@@ -1,25 +1,25 @@
-# Import_une_partie.py
+# Import_parties_parquet.py
 import requests
 import json
 import time
 import pandas as pd
-from Scripts_génération_data.Import_des_users import type_parties
-import pickle
 import os
+
+# Types de parties
+type_parties = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]
 
 # Répertoire des données
 DATA_DIR = os.path.join(os.path.dirname(__file__), "../Data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# Charger le DataFrame des ouvertures depuis openings.pkl dans Data/
-openings_file = os.path.join(DATA_DIR, "openings.pkl")
-with open(openings_file, "rb") as f:
-    df_openings = pickle.load(f)
+# Charger les ouvertures depuis un fichier parquet
+openings_file = os.path.join(DATA_DIR, "openings.parquet")
+df_openings = pd.read_parquet(openings_file)
 
 def identify_opening(moves_list, openings_df, max_moves=6):
     moves_to_check = moves_list[:max_moves]
     for _, row in openings_df.iterrows():
-        opening_moves = row["moves"][:max_moves]
+        opening_moves = list(row["moves"][:max_moves])
         if moves_to_check[:len(opening_moves)] == opening_moves:
             return row["eco"], row["name"]
     return None, None
@@ -42,12 +42,12 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
         else:
             print("Erreur", r.status_code, username)
             return pd.DataFrame(columns=[
-                "rated", "timestamp", "result", "eco", "opening_name", "nb_coups_joueur"
+                "user_id", "rated", "timestamp", "result", "eco", "opening_name", "nb_coups_joueur"
             ])
     else:
         print(f"Échec après {max_retries} retries pour {username}")
         return pd.DataFrame(columns=[
-            "rated", "timestamp", "result", "eco", "opening_name", "nb_coups_joueur"
+            "user_id", "rated", "timestamp", "result", "eco", "opening_name", "nb_coups_joueur"
         ])
 
     rows = []
@@ -57,11 +57,14 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
         game_data = json.loads(line)
         rated = game_data.get("rated", None)
         timestamp = game_data.get("createdAt", None)
+
+        # Déterminer la couleur du joueur
         try:
             white_user = game_data["players"]["white"]["user"]["id"].lower()
             player_color = "white" if white_user == username.lower() else "black"
         except Exception:
             continue
+
         winner = game_data.get("winner", None)
         result = "Win" if winner == player_color else "Loss"
 
@@ -72,6 +75,7 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
         eco, opening_name = identify_opening(moves_joueur, df_openings)
 
         rows.append({
+            "user_id": username,
             "rated": rated,
             "timestamp": timestamp,
             "result": result,
@@ -82,19 +86,32 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
 
     return pd.DataFrame(rows)
 
-def import_games_df(dfs_users, nb_parties_extraites, token):
-    all_games = {}
+def import_games_df(nb_parties_extraites, token):
+    """
+    Importation des parties pour tous les utilisateurs et tous les formats.
+    Sauvegarde un seul fichier Parquet par type de partie.
+    """
     for format_partie in type_parties:
-        all_games[format_partie] = {}
-        users = dfs_users[format_partie]["user_id"].tolist()
+        print(f"Extraction des parties pour {format_partie}…")
+        # Charger les joueurs pour ce format
+        users_file = os.path.join(DATA_DIR, f"users_{format_partie}.parquet")
+        df_users = pd.read_parquet(users_file)
+        users = df_users["user_id"].tolist()
+
+        dfs = []
+
         for username in users:
             df_games = extract_games_user(username, format_partie, nb_parties_extraites, token)
-            all_games[format_partie][username] = df_games
+            dfs.append(df_games)
             time.sleep(1)
 
-    # 🔹 Sauvegarde dans Data/
-    games_file = os.path.join(DATA_DIR, "dfs_games.pkl")
-    with open(games_file, "wb") as f:
-        pickle.dump(all_games, f)
+        # Concaténer toutes les parties pour ce format
+        df_format = pd.concat(dfs, ignore_index=True)
 
-    return all_games
+        # Sauvegarder un seul fichier Parquet par format
+        output_file = os.path.join(DATA_DIR, f"games_{format_partie}.parquet")
+        df_format.to_parquet(output_file, index=False)
+        print(f"Sauvegardé {len(df_format)} parties dans {output_file}\n")
+
+# Pour tester 
+# import_games_df(nb_parties_extraites=20, token="lip_hdpFWKEs9ik0pf5mIg5T")

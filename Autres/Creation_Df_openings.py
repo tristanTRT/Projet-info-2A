@@ -64,10 +64,10 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "Data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # Chemin complet pour sauvegarder
-save_path = os.path.join(DATA_DIR, "openings.pkl")
+save_path = os.path.join(DATA_DIR, "openings.parquet")
 
-# Sauvegarde en pickle
-df_openings.to_pickle(save_path)
+# Sauvegarde en parquet
+df_openings.to_parquet(save_path)
 
 print(f"DataFrame ouvertures créé et sauvegardé dans {save_path}")
 print(df_openings.head())
