@@ -114,4 +114,4 @@ def import_games_df(nb_parties_extraites, token):
         print(f"Sauvegardé {len(df_format)} parties dans {output_file}\n")
 
 # Pour tester 
-# import_games_df(nb_parties_extraites=20, token="lip_hdpFWKEs9ik0pf5mIg5T")
+# import_games_df(nb_parties_extraites=10, token="lip_EhmwZ2NVgfwE6kcZ4rWh")
