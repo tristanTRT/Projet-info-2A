@@ -37,8 +37,8 @@ def show_player_games(username, dfs_games, max_rows=5):
 # show_player_games("elconceto", dfs_games)
 
 # Exemple affichage classique
-print(dfs_users["classical"])
-print('Users classical format\n')
+
+
 
 
 print(dfs_games["classical"]["chesstheory64"])

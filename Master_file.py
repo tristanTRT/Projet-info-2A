@@ -9,8 +9,10 @@ Master script pour :
 import subprocess
 import os
 import pickle
+from dotenv import load_dotenv
 from Scripts_génération_data.Import_des_users import import_users_df
 
+load_dotenv()
 
 # Répertoire pour stocker les données
 DATA_DIR = os.path.join(os.path.dirname(__file__), "Data")
@@ -36,7 +38,7 @@ def main():
     nombre_sample = int(input("Quel est le nombre de joueurs à étudier ? "))
     parsing = int(input("Prendre un joueur tous les ... "))
     nb_parties_extraites = int(input("Combien de parties extraire ? "))
-    token = "lip_FK5FgMyNLKal5syhcnCV" # Token Lichess Tristan
+    token = os.environ["jeton_api"] # Token Lichess Tristan
 
     # 1) Import des users
     dfs_users = import_users_df(nombre_sample, parsing, token)
