@@ -1,14 +1,11 @@
-# Import_parties_parquet.py
 import requests
 import json
 import time
 import pandas as pd
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Types de parties
 type_parties = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]
-
-# Répertoire des données
 DATA_DIR = os.path.join(os.path.dirname(__file__), "../Data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -16,13 +13,16 @@ os.makedirs(DATA_DIR, exist_ok=True)
 openings_file = os.path.join(DATA_DIR, "openings.parquet")
 df_openings = pd.read_parquet(openings_file)
 
-def identify_opening(moves_list, openings_df, max_moves=6):
-    moves_to_check = moves_list[:max_moves]
-    for _, row in openings_df.iterrows():
-        opening_moves = list(row["moves"][:max_moves])
-        if moves_to_check[:len(opening_moves)] == opening_moves:
-            return row["eco"], row["name"]
-    return None, None
+# Construire un dictionnaire pour identifier rapidement les ouvertures
+MAX_MOVES = 6
+openings_dict = {}
+for _, row in df_openings.iterrows():
+    key = tuple(row["moves"][:MAX_MOVES])
+    openings_dict[key] = (row["eco"], row["name"])
+
+def identify_opening_fast(moves_list):
+    moves_slice = tuple(moves_list[:MAX_MOVES])
+    return openings_dict.get(moves_slice, (None, None))
 
 def extract_games_user(username, format_partie, nb_parties, token, max_retries=5):
     url = f"https://lichess.org/api/games/user/{username}"
@@ -58,30 +58,26 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
     for line in r.text.strip().split("\n"):
         if not line.strip():
             continue
-
         game_data = json.loads(line)
-        rated = game_data.get("rated", None)
-        timestamp = game_data.get("createdAt", None)
+        rated = game_data.get("rated")
+        timestamp = game_data.get("createdAt")
 
-        # Déterminer la couleur du joueur
         try:
             white_user = game_data["players"]["white"]["user"]["id"].lower()
             player_color = "white" if white_user == username.lower() else "black"
         except Exception:
             continue
 
-        # Elo au moment de la partie
-        rating = game_data["players"][player_color].get("rating", None)
-        rating_diff = game_data["players"][player_color].get("ratingDiff", None)
-
-        winner = game_data.get("winner", None)
+        rating = game_data["players"][player_color].get("rating")
+        rating_diff = game_data["players"][player_color].get("ratingDiff")
+        winner = game_data.get("winner")
         result = "Win" if winner == player_color else "Loss"
 
         moves = game_data.get("moves", "").split()
         nb_coups_joueur = len(moves[::2]) if player_color == "white" else len(moves[1::2])
+        moves_joueur = moves[::2] if player_color == "white" else moves[1::2]
 
-        # Ouverture basée sur la séquence complète
-        eco, opening_name = identify_opening(moves, df_openings)
+        eco, opening_name = identify_opening_fast(moves_joueur)
 
         rows.append({
             "user_id": username,
@@ -97,27 +93,34 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
 
     return pd.DataFrame(rows)
 
-def import_games_df(nb_parties_extraites, token):
+
+def import_games_df(nb_parties_extraites, token, max_workers=10):
     """
     Importation des parties pour tous les utilisateurs et tous les formats.
-    Sauvegarde un seul fichier Parquet par type de partie.
+    Sauvegarde un fichier Parquet par type de partie.
+    Retourne un DataFrame global.
     """
+    all_dfs = []
+
     for format_partie in type_parties:
         print(f"Extraction des parties pour {format_partie}…")
-
         users_file = os.path.join(DATA_DIR, f"users_{format_partie}.parquet")
         df_users = pd.read_parquet(users_file)
         users = df_users["user_id"].tolist()
 
         dfs = []
 
-        for username in users:
-            df_games = extract_games_user(username, format_partie, nb_parties_extraites, token)
-            dfs.append(df_games)
-            time.sleep(1)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_user = {executor.submit(extract_games_user, user, format_partie, nb_parties_extraites, token): user for user in users}
+            for future in as_completed(future_to_user):
+                user_df = future.result()
+                dfs.append(user_df)
 
         df_format = pd.concat(dfs, ignore_index=True)
-
         output_file = os.path.join(DATA_DIR, f"games_{format_partie}.parquet")
         df_format.to_parquet(output_file, index=False)
         print(f"Sauvegardé {len(df_format)} parties dans {output_file}\n")
+        all_dfs.append(df_format)
+
+    df_all = pd.concat(all_dfs, ignore_index=True)
+    return df_all
