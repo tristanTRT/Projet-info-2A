@@ -42,18 +42,23 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
         else:
             print("Erreur", r.status_code, username)
             return pd.DataFrame(columns=[
-                "user_id", "rated", "timestamp", "result", "eco", "opening_name", "nb_coups_joueur"
+                "user_id", "rated", "timestamp", "result",
+                "eco", "opening_name", "nb_coups_joueur",
+                "rating", "rating_diff"
             ])
     else:
         print(f"Échec après {max_retries} retries pour {username}")
         return pd.DataFrame(columns=[
-            "user_id", "rated", "timestamp", "result", "eco", "opening_name", "nb_coups_joueur"
+            "user_id", "rated", "timestamp", "result",
+            "eco", "opening_name", "nb_coups_joueur",
+            "rating", "rating_diff"
         ])
 
     rows = []
     for line in r.text.strip().split("\n"):
         if not line.strip():
             continue
+
         game_data = json.loads(line)
         rated = game_data.get("rated", None)
         timestamp = game_data.get("createdAt", None)
@@ -65,11 +70,17 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
         except Exception:
             continue
 
+        # Elo au moment de la partie
+        rating = game_data["players"][player_color].get("rating", None)
+        rating_diff = game_data["players"][player_color].get("ratingDiff", None)
+
         winner = game_data.get("winner", None)
         result = "Win" if winner == player_color else "Loss"
 
         moves = game_data.get("moves", "").split()
         nb_coups_joueur = len(moves[::2]) if player_color == "white" else len(moves[1::2])
+
+        # Ouverture basée sur la séquence complète
         eco, opening_name = identify_opening(moves, df_openings)
 
         rows.append({
@@ -79,7 +90,9 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
             "result": result,
             "eco": eco,
             "opening_name": opening_name,
-            "nb_coups_joueur": nb_coups_joueur
+            "nb_coups_joueur": nb_coups_joueur,
+            "rating": rating,
+            "rating_diff": rating_diff
         })
 
     return pd.DataFrame(rows)
@@ -91,7 +104,7 @@ def import_games_df(nb_parties_extraites, token):
     """
     for format_partie in type_parties:
         print(f"Extraction des parties pour {format_partie}…")
-        # Charger les joueurs pour ce format
+
         users_file = os.path.join(DATA_DIR, f"users_{format_partie}.parquet")
         df_users = pd.read_parquet(users_file)
         users = df_users["user_id"].tolist()
@@ -103,13 +116,8 @@ def import_games_df(nb_parties_extraites, token):
             dfs.append(df_games)
             time.sleep(1)
 
-        # Concaténer toutes les parties pour ce format
         df_format = pd.concat(dfs, ignore_index=True)
 
-        # Sauvegarder un seul fichier Parquet par format
         output_file = os.path.join(DATA_DIR, f"games_{format_partie}.parquet")
         df_format.to_parquet(output_file, index=False)
         print(f"Sauvegardé {len(df_format)} parties dans {output_file}\n")
-
-# Pour tester 
-# import_games_df(nb_parties_extraites=10, token="lip_EhmwZ2NVgfwE6kcZ4rWh")
