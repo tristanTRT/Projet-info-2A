@@ -70,9 +70,7 @@ def extract_games_user(username, format_partie, nb_parties, token, max_retries=5
 
         moves = game_data.get("moves", "").split()
         nb_coups_joueur = len(moves[::2]) if player_color == "white" else len(moves[1::2])
-        moves_joueur = moves[::2] if player_color == "white" else moves[1::2]
-
-        eco, opening_name = identify_opening(moves_joueur, df_openings)
+        eco, opening_name = identify_opening(moves, df_openings)
 
         rows.append({
             "user_id": username,
