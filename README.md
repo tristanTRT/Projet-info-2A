@@ -1,0 +1,1 @@
+Pour faire tourner le MasterFile, il faut créer un fichier .env avec les identifiants de connexion de Tristan pour accéder à l'espace de stockage du S3, et se doter d'un token API Lichess qu'on appellera jeton_api.
