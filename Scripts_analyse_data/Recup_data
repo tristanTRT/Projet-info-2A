@@ -1,0 +1,68 @@
+import pandas as pd
+import os
+import s3fs
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement
+load_dotenv()
+
+# --- Configuration S3 ---
+BUCKET_NAME = "tristant"
+S3_PREFIX = "Data_projet_info"
+S3_ENDPOINT = os.getenv("AWS_S3_ENDPOINT")
+S3_URL = f"https://{S3_ENDPOINT}"
+
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN")
+
+# Options pour pandas + s3fs
+storage_options = {
+    "key": AWS_ACCESS_KEY_ID,
+    "secret": AWS_SECRET_ACCESS_KEY,
+    "token": AWS_SESSION_TOKEN,
+    "client_kwargs": {"endpoint_url": S3_URL}
+}
+
+# 👉 Liste des fichiers fournie manuellement (contournement sans ListBucket)
+FILES = [
+    "games_blitz.parquet",
+    "games_rapid.parquet",
+    "games_bullet.parquet",
+    "games_classical.parquet"
+]
+
+
+def read_all_games_without_listing():
+    dfs = []
+
+    for file in FILES:
+        # Construire le chemin S3 complet
+        s3_path = f"s3://{BUCKET_NAME}/{S3_PREFIX}/{file}"
+        
+        # Extraire le format de partie
+        format_partie = file.replace("games_", "").replace(".parquet", "")
+
+        try:
+            # Lecture directe sans lister le bucket
+            df = pd.read_parquet(s3_path, storage_options=storage_options)
+            df["format_partie"] = format_partie
+            dfs.append(df)
+            print(f"✅ Lu : {s3_path}")
+
+        except Exception as e:
+            print(f"❌ Erreur sur {s3_path} : {e}")
+
+    if dfs:
+        df_total = pd.concat(dfs, ignore_index=True)
+        print(f"\nImport terminé : {len(df_total)} parties au total")
+        return df_total
+    else:
+        print("Aucun fichier importé.")
+        return pd.DataFrame()
+
+if __name__ == "__main__":
+    df_all = read_all_games_without_listing()
+    print("\nAperçu :")
+    print(df_all.head())
+
