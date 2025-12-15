@@ -153,6 +153,9 @@ def main():
         prefix="diffusion" 
     )
     # ====================================================================
+    print("\n🗑 Suppression des fichiers locaux dans le dossier Data...")
+    nettoyer_data(DATA_DIR)
+    print("✅ Fichiers locaux supprimés.")
 
     print("=== Master script terminé ===")
     return "=== Master script terminé ==="
