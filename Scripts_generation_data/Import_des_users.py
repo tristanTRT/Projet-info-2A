@@ -1,73 +1,130 @@
-# Import_des_users_parquet.py
 import requests
 import pandas as pd
 import time
 import os
-
-type_parties = ["ultraBullet", "bullet", "blitz", "rapid", "classical"]
+import random
+import json
 
 # Répertoire des données
 DATA_DIR = os.path.join(os.path.dirname(__file__), "../Data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-def extraction_users_leaderboard(nombre_sample, format_partie, parsing, token, max_retries=5):
+def get_recent_opponents(username, token, nb_games_to_check=10):
     """
-    Récupère les meilleurs joueurs pour un format donné depuis l'API Lichess
+    Récupère les derniers adversaires d'un joueur.
     """
-    nbusermax = parsing * nombre_sample
-    url = f"https://lichess.org/api/player/top/{nbusermax}/{format_partie}"
-    headers = {"Authorization": f"Bearer {token}"}
+    url = f"https://lichess.org/api/games/user/{username}"
+    params = {"max": nb_games_to_check, "lite": "true"} 
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/x-ndjson"}
 
-    retries = 0
-    while retries < max_retries:
-        r = requests.get(url, headers=headers)
-        if r.status_code == 200:
-            break
-        elif r.status_code == 429:  # trop de requêtes
-            wait_time = int(r.headers.get("Retry-After", 3))
-            print(f"429 reçu pour leaderboard {format_partie}. Attente {wait_time}s ({retries+1}/{max_retries})")
-            time.sleep(wait_time)
-            retries += 1
-        else:
-            print("Erreur", r.status_code, format_partie)
+    opponents = []
+    
+    try:
+        r = requests.get(url, params=params, headers=headers)
+        
+        if r.status_code == 429:
+            print("⏳ 429 (Discovery) - Pause 3s...")
+            time.sleep(3)
+            return []
+            
+        if r.status_code != 200:
             return []
 
-    else:
-        print(f"Échec après {max_retries} retries pour leaderboard {format_partie}")
+        for line in r.iter_lines():
+            if not line: continue
+            try:
+                game = json.loads(line)
+                players = game.get("players", {})
+                
+                for color in ["white", "black"]:
+                    if color in players and "user" in players[color]:
+                        p_id = players[color]["user"]["id"]
+                        # On ne s'ajoute pas soi-même comme adversaire
+                        if p_id.lower() != username.lower():
+                            opponents.append(p_id)
+
+            except Exception:
+                continue
+
+    except Exception as e:
+        print(f"Erreur sur {username}: {e}")
         return []
 
-    req = r.json()
-    users = req.get("users", [])
-    subset = users[::parsing]
+    # SÉCURITÉ 1 : On nettoie les doublons au niveau de la requête API
+    return list(set(opponents))
 
-    user_data = []
-    for user in subset:
-        user_id = user.get("id")
-        perfs = user.get("perfs", {})
-        elo = perfs.get(format_partie, {}).get("rating", None)
-        user_data.append({"user_id": user_id, "elo": elo})
-
-    return user_data
-
-def import_users_df(nombre_sample, parsing, token):
+def discover_users_random_walk(seed_user, target_count, token, branching_factor=5):
     """
-    Récupère les utilisateurs pour tous les formats et sauvegarde un Parquet par type de partie
+    Marche aléatoire accélérée avec garantie d'unicité.
     """
-    dfs = {}
-    for format_partie in type_parties:
-        print(f"Extraction des joueurs pour {format_partie}…")
-        user_list = extraction_users_leaderboard(nombre_sample, format_partie, parsing, token)
-        df = pd.DataFrame(user_list, columns=["user_id", "elo"]).reset_index(drop=True)
-        dfs[format_partie] = df
+    print(f"--- Démarrage Random Walk (Graine : {seed_user}, Vitesse x{branching_factor}) ---")
+    
+    # 'collected_users' est un SET (Ensemble) : Il interdit physiquement les doublons
+    collected_users = set()
+    collected_users.add(seed_user.lower())
+    
+    final_list = [{"user_id": seed_user.lower()}]
+    current_user = seed_user.lower()
+    
+    attempts = 0
+    max_attempts = target_count * 3 
 
-        # 🔹 Sauvegarde au format Parquet
-        output_file = os.path.join(DATA_DIR, f"users_{format_partie}.parquet")
-        df.to_parquet(output_file, index=False)
-        print(f"Sauvegardé {len(df)} joueurs dans {output_file}\n")
+    while len(final_list) < target_count and attempts < max_attempts:
+        attempts += 1
+        
+        # 1. On cherche les adversaires
+        opponents = get_recent_opponents(current_user, token)
+        
+        # ### SÉCURITÉ ANTI-DOUBLON MAJEURE ###
+        # On ne garde QUE ceux qui ne sont PAS dans 'collected_users'
+        new_candidates = [opp for opp in opponents if opp.lower() not in collected_users]
+        
+        if new_candidates:
+            # On en prend jusqu'à 'branching_factor' (ex: 5)
+            nb_to_take = min(len(new_candidates), branching_factor)
+            
+            # random.sample garantit qu'on ne prend pas 2 fois le même dans le lot
+            batch = random.sample(new_candidates, nb_to_take)
+            
+            # Ajout à la liste officielle
+            for user in batch:
+                user_clean = user.lower()
+                
+                # Double vérification (paranoïaque mais sûre)
+                if user_clean not in collected_users:
+                    collected_users.add(user_clean)
+                    final_list.append({"user_id": user_clean})
+            
+            print(f"⚡ Ajout de {len(batch)} joueurs via {current_user} | Total : {len(final_list)}/{target_count}")
 
-        time.sleep(1)  # éviter d’être bloqué par l’API
+            # REBOND : On continue la marche depuis l'un des nouveaux trouvés
+            current_user = random.choice(batch).lower()
+            
+            time.sleep(0.5)
+        else:
+            # Impasse : Tous les adversaires de ce joueur sont DÉJÀ dans notre liste
+            print(f"   ⚠️ Impasse sur {current_user} (Adversaires déjà connus). Rebond aléatoire.")
+            
+            # On pioche quelqu'un d'autre dans la liste existante pour relancer la machine
+            # (On ne l'ajoute pas, on s'en sert juste de tremplin)
+            pool = list(collected_users - {current_user})
+            if pool:
+                current_user = random.choice(pool)
+            else:
+                break
+            time.sleep(1)
 
-    return dfs
-
-# Pour tester 
-# dfs_users = import_users_df(nombre_sample=50, parsing=2, token="lip_hdpFWKEs9ik0pf5mIg5T")
+    # Sauvegarde finale
+    df_global = pd.DataFrame(final_list)
+    
+    # Si on a dépassé légèrement à cause du dernier batch, on coupe proprement
+    if len(df_global) > target_count:
+        df_global = df_global.iloc[:target_count]
+        
+    output_path = os.path.join(DATA_DIR, "users_list_global.parquet")
+    df_global.to_parquet(output_path, index=False)
+    
+    print(f"\n🌍 TERMINÉ : {len(df_global)} joueurs uniques trouvés.")
+    print(f"📁 Sauvegardé dans : {output_path}")
+    
+    return df_global
