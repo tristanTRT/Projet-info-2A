@@ -5,8 +5,6 @@ import shutil
 import pandas as pd
 from dotenv import load_dotenv
 
-# --- IMPORTS LOCAUX ---
-# CHANGEMENT ICI : On importe la fonction de Random Walk
 from Scripts_generation_data.Import_des_users import discover_users_random_walk
 
 try:
@@ -42,7 +40,7 @@ def upload_folder_to_s3(local_folder, bucket, prefix):
         endpoint_url=f"https://{os.getenv('AWS_S3_ENDPOINT', 'minio.lab.sspcloud.fr')}",
         region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1")
     )
-    # Nettoyage
+    
     try:
         objs = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
         if "Contents" in objs:
@@ -81,7 +79,6 @@ def main():
     lancer_creation_openings()
 
     # 2. Découverte des users par Marche Aléatoire
-    # On remplace process_leaderboards par discover_users_random_walk
     discover_users_random_walk(seed_user, target_users, token)
 
     # 3. Import des parties
