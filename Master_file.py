@@ -59,7 +59,7 @@ def upload_folder_to_s3(local_folder, bucket, prefix):
     print("✅ Upload terminé.")
 
 def lancer_creation_openings():
-    script = os.path.join(BASE_DIR, "Autres", "Creation_Df_openings.py")
+    script = os.path.join(BASE_DIR, "Scripts_generation_data", "Creation_Df_openings.py")
     subprocess.run([sys.executable, script], check=True)
 
 def main():
