@@ -86,7 +86,8 @@ Les données proviennent de parties jouées sur **Lichess**, incluant notamment 
 - horodatage des parties,
 - ouvertures jouées.
 
-Le jeu de données utilisé dans le notebook couvre **un large spectre de niveaux Elo**.
+Le jeu de données utilisé dans le notebook couvre **un large spectre de niveaux Elo**. 
+Il a été généré en exécutant le **Masterfile** avec comme paramètres trista35 comme pseudo source, 500 joueurs et 150 parties par joueur. 
 
 
 ## 5) Notions d'échecs utiles 
